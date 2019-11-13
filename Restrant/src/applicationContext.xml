@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+	xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-3.1.xsd 
+	http://www.springframework.org/schema/tx 
+	http://www.springframework.org/schema/tx/spring-tx.xsd" 
+	xmlns:tx="http://www.springframework.org/schema/tx">
+
+
+	<bean id="dataSource"
+		class="org.apache.commons.dbcp.BasicDataSource">
+		<property name="driverClassName"
+			value="com.mysql.jdbc.Driver" />
+		<property name="url"
+			value="jdbc:mysql://localhost:3306/restrant">
+		</property>
+		<property name="username" value="root"></property>
+		<property name="password" value="123456"></property>
+	</bean>
+	<bean id="sessionFactory"
+		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="dataSource">
+			<ref bean="dataSource" />
+		</property>
+		<property name="hibernateProperties">
+			<props>
+				<prop key="hibernate.dialect">
+					org.hibernate.dialect.MySQLDialect
+				</prop>
+			</props>
+		</property>
+		<property name="mappingResources">
+			<list>
+				<value>com/restrant/entity/Mealseries.hbm.xml</value>
+				<value>com/restrant/entity/Admin.hbm.xml</value>
+				<value>com/restrant/entity/Meal.hbm.xml</value>
+				<value>com/restrant/entity/Orders.hbm.xml</value>
+				<value>com/restrant/entity/Users.hbm.xml</value>
+				<value>com/restrant/entity/Orderdts.hbm.xml</value></list>
+		</property>
+	</bean>
+	<!--  定义事务通知    --> 
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">	 
+	  <tx:attributes>	 
+	  	<tx:method name="*" propagation="REQUIRED" /> 
+	  </tx:attributes>
+	</tx:advice>
+	
+    <!--定义切面，并将事务通知和切面组合（定义哪些方法应用事务规则） -->
+    <aop:config>
+        <!-- 对com.restrant.biz包下的所有类的所有方法都应用事务规则 -->
+    	<aop:pointcut id="bizMethods" expression="execution(* com.restrant.biz.*.*(..))" /> 
+    	<!--  将事务通知和切面组合   --> 
+    	<aop:advisor advice-ref="txAdvice" pointcut-ref="bizMethods" /> 
+    </aop:config>
+    
+	<bean id="transactionManager"
+		class="org.springframework.orm.hibernate4.HibernateTransactionManager">
+		<property name="sessionFactory" ref="sessionFactory" />
+	</bean>
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	
+	<!-- 定义MealDAOImpl类-->
+	<bean id="mealDAO" class="com.restrant.dao.impl.MealDAOImpl">	  
+    	<property name="sessionFactory" ref="sessionFactory" />
+    </bean>
+    <!-- 定义MealBizImpl类,并为其mealDAO属性注入值-->
+	<bean id="mealBiz" class="com.restrant.biz.impl.MealBizImpl">	  
+    	<property name="mealDAO" ref="mealDAO" />
+    </bean>
+    <!-- 定义MealAction，并为其中属性mealBiz和mealSeriesBiz注入值 -->
+	<bean name="mealAction" class="com.restrant.action.MealAction" scope="prototype">
+    	<property name="mealBiz" ref="mealBiz" />
+    	<property name="mealSeriesBiz" ref="mealSeriesBiz" />
+    </bean>
+    
+    
+    <!-- 定义MealSeriesDAOImpl类-->
+	<bean id="mealSeriesDAO" class="com.restrant.dao.impl.MealSeriesDAOImpl">	  
+    	<property name="sessionFactory" ref="sessionFactory" />
+    </bean>
+    <!-- 定义MealSeriesBizImpl类,并为其mealSeriesDAO属性注入值-->
+	<bean id="mealSeriesBiz" class="com.restrant.biz.impl.MealSeriesBizImpl">	  
+    	<property name="mealSeriesDAO" ref="mealSeriesDAO" />
+    </bean>
+
+    <!-- 定义CartAction，并为其中属性mealBiz注入值 -->
+	<bean name="cartAction" class="com.restrant.action.CartAction" scope="prototype">
+    	<property name="mealBiz" ref="mealBiz" />
+    </bean>
+    
+    <bean id="ordersDAO" class="com.restrant.dao.impl.OrdersDAOImpl">	  
+    	<property name="sessionFactory" ref="sessionFactory" />
+    </bean>
+    <bean id="ordersBiz" class="com.restrant.biz.impl.OrdersBizImpl">	  
+    	<property name="ordersDAO" ref="ordersDAO" />    	
+    </bean>
+    <bean name="ordersAction" class="com.restrant.action.OrdersAction" scope="prototype">
+    	<property name="ordersBiz" ref="ordersBiz" />
+    	<property name="orderDtsBiz" ref="orderDtsBiz" />
+    </bean>
+    
+    <bean id="orderDtsDAO" class="com.restrant.dao.impl.OrderDtsDAOImpl">	  
+    	<property name="sessionFactory" ref="sessionFactory" />
+    </bean> 
+    <bean id="orderDtsBiz" class="com.restrant.biz.impl.OrderDtsBizImpl">	  
+    	<property name="orderDtsDAO" ref="orderDtsDAO" />
+    </bean>
+    
+    <!-- 定义UserDAOImpl类-->
+	<bean id="userDAO" class="com.restrant.dao.impl.UserDAOImpl">	  
+    	<property name="sessionFactory" ref="sessionFactory" />
+    </bean>
+    <!-- 定义UserBizImpl类,并为其userDAO属性注入值-->
+	<bean id="userBiz" class="com.restrant.biz.impl.UserBizImpl">	  
+    	<property name="userDAO" ref="userDAO" />
+    </bean>
+    <!-- 定义UserAction，并为其中属性userBiz注入值 -->
+	<bean name="userAction" class="com.restrant.action.UserAction" scope="prototype">
+    	<property name="userBiz" ref="userBiz" />
+    </bean>
+	
+</beans>
